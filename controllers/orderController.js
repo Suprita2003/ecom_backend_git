@@ -2,15 +2,15 @@ const Order = require('../models/orderModel');
 
 const createOrder = async (req, res) => {
     try {
-        const { user_id, products, cart_id, status } = req.body;
+        const { user_id, cart_id, status } = req.body;
 
-        if (!user_id || !products || !cart_id || !status) {
+        if (!user_id  || !cart_id || !status) {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
         const order = new Order({
             user_id,
-            products,
+            // products,
             cart_id,
             status
         });
@@ -37,7 +37,7 @@ const getOrdersByUser = async (req, res) => {
 
         const orders = await Order.find({ user_id })
             .populate('user_id', 'name email') 
-            .populate('products.product_id', 'name price')
+            // .populate('products.product_id', 'name price')
             .populate('cart_id');
 
         if (!orders.length) {
