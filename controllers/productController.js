@@ -33,6 +33,23 @@ const getAllProducts = async (req, res) => {
     }
 };
 
+const getSingleProduct = async (req, res) => {
+    try {
+        const { id } = req.params; // Extract the ID from request parameters
+        const product = await Product.findById(id); // Use Mongoose's `findById` method
+
+        // Check if the product exists
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        res.status(200).json(product);
+        console.log("Fetched product successfully");
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        res.status(500).json({ message: "Error fetching product", error: error.message });
+    }
+};
 
 
-module.exports = { createProduct,getAllProducts };
+module.exports = { createProduct,getAllProducts,getSingleProduct };

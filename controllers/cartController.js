@@ -100,34 +100,59 @@ const deleteCart = async (req, res) => {
 
 const updateCart = async (req, res) => {
     try {
-        const { id, user_id } = req.params;
-        const { products, subtotal, discount, total, status } = req.body;
+        const { id, user_id } = req.params; // Cart ID and User ID from params
+        const { products, discount, status } = req.body; // Fields to update in the request body
 
+        // Find the cart by ID
         const cart = await Cart.findById(id);
         if (!cart) {
             return res.status(404).json({ success: false, message: 'Cart not found' });
         }
+
+        // Ensure the user ID matches the cart's user ID
         if (cart.user_id.toString() !== user_id) {
             return res.status(403).json({ success: false, message: 'Unauthorized: User ID mismatch' });
         }
-        
+
+        // Update products if provided
         if (products) {
+            if (!Array.isArray(products) || products.length === 0) {
+                return res.status(400).json({ success: false, message: 'Products must be a non-empty array' });
+            }
+
+            // Update cart products and recalculate the subtotal
             cart.products = products;
 
             let newSubtotal = 0;
             cart.products.forEach(product => {
-                newSubtotal += product.price * product.quantity;  
+                if (!product.price || !product.quantity) {
+                    throw new Error('Each product must have a valid price and quantity');
+                }
+                newSubtotal += product.price * product.quantity;
             });
             cart.subtotal = newSubtotal;
         }
-        
-        if (discount !== undefined) cart.discount = discount;
 
-        cart.total = cart.subtotal - cart.discount;
+        // Update discount if provided
+        if (typeof discount === 'number') {
+            if (discount < 0) {
+                return res.status(400).json({ success: false, message: 'Discount cannot be negative' });
+            }
+            cart.discount = discount;
+        }
 
-        if (status) cart.status = status;
+        // Calculate total
+        cart.total = cart.subtotal - (cart.discount || 0);
+
+        // Update status if provided
+        if (status) {
+            cart.status = status;
+        }
+
+        // Save the updated cart
         await cart.save();
 
+        // Send the updated cart as a response
         res.status(200).json({
             success: true,
             message: 'Cart updated successfully',
@@ -141,8 +166,5 @@ const updateCart = async (req, res) => {
         });
     }
 };
-
-
-
 
 module.exports = {createCart,addProductToCart,getCartById,deleteCart,updateCart};
